@@ -105,7 +105,7 @@ public class NgxGenerator {
                 methods.stream().map(method -> {
                     String url = getUrl(method);
 
-                    Set<String> params = new HashSet<>();
+                    List<String> params = new ArrayList<>();
 
                     if (url.contains("{") && url.contains("}")) {
                         url = "`" + url.replaceAll("\\{(.+?)}", "\\${$1}") + "`";
@@ -124,7 +124,7 @@ public class NgxGenerator {
                             continue;
                         if (parameter.isAnnotationPresent(RequestBody.class)) {
                             body = names[i];
-                            params.add(getTypedParameterName(names[i], parameter.getType(), returnTypeSimpleNames, false));
+                            params.add(0, getTypedParameterName(names[i], parameter.getType(), returnTypeSimpleNames, false));
                             continue;
                         }
                         params.add(getTypedParameterName(names[i], parameter.getType(), returnTypeSimpleNames, true));
