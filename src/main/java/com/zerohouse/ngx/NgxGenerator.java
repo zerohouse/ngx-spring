@@ -1,6 +1,11 @@
 package com.zerohouse.ngx;
 
 
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.scanners.TypeAnnotationsScanner;
+import org.reflections.util.ClasspathHelper;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.annotation.Annotation;
@@ -38,6 +43,27 @@ public class NgxGenerator {
         defaultTypes.put("List", "%s[]");
         defaultTypes.put("Set", "%s[]");
         defaultTypes.put("Map", "Map<%s>");
+    }
+
+    public static void generate(String prefix, String packagePath, String outputPath) {
+        try {
+            NgxGenerator ngxGenerator = new NgxGenerator(prefix);
+            Reflections reflections = new Reflections(new TypeAnnotationsScanner(), new SubTypesScanner(), ClasspathHelper.forPackage(packagePath));
+            Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Controller.class);
+            classes.addAll(reflections.getTypesAnnotatedWith(RestController.class));
+            classes.forEach(aClass -> ngxGenerator.generate(aClass, outputPath));
+            TsGenerator tsGenerator = new TsGenerator("ApiService",
+                    "import {Injectable} from '@angular/core';");
+            classes.forEach(aClass -> {
+                String name = aClass.getSimpleName().replace("Controller", "").toLowerCase();
+                tsGenerator.addImports(String.format("import {%s} from './%s';", aClass.getSimpleName(), aClass.getSimpleName()));
+                tsGenerator.addDependency(String.format("public %s: %s", name, aClass.getSimpleName()));
+            });
+            tsGenerator.saveResult(outputPath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void generate(Class<?> aClass, String path) {
