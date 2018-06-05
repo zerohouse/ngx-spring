@@ -74,7 +74,7 @@ public class NgxGenerator {
             classes.forEach(aClass -> {
                 String name = aClass.getSimpleName().replace("Controller", "");
                 tsGenerator.addImports(String.format("import {%s} from './%s';", aClass.getSimpleName(), aClass.getSimpleName()));
-                tsGenerator.addDependency(String.format("public %s: %s", name, aClass.getSimpleName()));
+                tsGenerator.addDependency(String.format("public %s: %s", name.toLowerCase(), aClass.getSimpleName()));
             });
             tsGenerator.saveResult(outputPath);
             new TypeScriptGenerator(settings).generateTypeScript(

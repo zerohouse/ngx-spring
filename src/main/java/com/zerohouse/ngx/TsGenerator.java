@@ -37,7 +37,8 @@ public class TsGenerator {
     private String constructor() {
         if (dependencies == null || dependencies.size() == 0)
             return "";
-        return String.format("  constructor(%s) {\n" +
+        return String.format("  constructor(%s) {\nif (!origin)\n" +
+                "      this.origin = '';" +
                 "  }\n\n", dependencies.stream().collect(Collectors.joining(", ")));
     }
 
