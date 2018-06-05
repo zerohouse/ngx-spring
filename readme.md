@@ -1,4 +1,4 @@
-## Spring -> Angular Controller
+## Spring Controller -> Angular Api Service
 
 To get a Git project into your build:
 
