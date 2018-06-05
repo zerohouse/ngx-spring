@@ -1,15 +1,23 @@
 package com.zerohouse.ngx;
 
 
+import cz.habarta.typescript.generator.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 import org.reflections.util.ClasspathHelper;
+import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,17 +25,20 @@ import java.util.stream.Collectors;
 
 public class NgxGenerator {
 
+    List<Class<?>> excludes = new ArrayList<>();
+    ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
+
     String prefix = "";
-
-    String paramMethod = "  %s(%s): Observable<%s> {\n" +
-            "    return this.http.%s<%s>(%s, %s);\n" +
-            "  }\n";
-
 
     Map<String, String> defaultTypes;
 
-    public NgxGenerator(String prefix) {
-        this.prefix = prefix;
+    Set<Type> types = new HashSet<>();
+
+    public NgxGenerator(String urlPrefix) {
+        this.excludeAdd(HttpServletRequest.class);
+        this.excludeAdd(HttpServletResponse.class);
+        this.excludeAdd(PathVariable.class);
+        this.prefix = urlPrefix;
         defaultTypes = new HashMap<>();
         defaultTypes.put("boolean", "boolean");
         defaultTypes.put("Boolean", "boolean");
@@ -45,33 +56,47 @@ public class NgxGenerator {
         defaultTypes.put("Map", "Map<%s>");
     }
 
+    public void excludeAdd(Class<?> aClass) {
+        this.excludes.add(aClass);
+    }
+
     public static void generate(String prefix, String packagePath, String outputPath) {
         try {
             NgxGenerator ngxGenerator = new NgxGenerator(prefix);
+            Settings settings = new Settings();
+            settings.outputKind = TypeScriptOutputKind.module;
+            settings.jsonLibrary = JsonLibrary.jackson2;
             Reflections reflections = new Reflections(new TypeAnnotationsScanner(), new SubTypesScanner(), ClasspathHelper.forPackage(packagePath));
             Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Controller.class);
             classes.addAll(reflections.getTypesAnnotatedWith(RestController.class));
+            classes.removeAll(ngxGenerator.excludes);
             classes.forEach(aClass -> ngxGenerator.generate(aClass, outputPath));
             TsGenerator tsGenerator = new TsGenerator("ApiService",
                     "import {Injectable} from '@angular/core';");
             classes.forEach(aClass -> {
-                String name = aClass.getSimpleName().replace("Controller", "").toLowerCase();
+                String name = aClass.getSimpleName().replace("Controller", "");
                 tsGenerator.addImports(String.format("import {%s} from './%s';", aClass.getSimpleName(), aClass.getSimpleName()));
                 tsGenerator.addDependency(String.format("public %s: %s", name, aClass.getSimpleName()));
             });
             tsGenerator.saveResult(outputPath);
+            new TypeScriptGenerator(settings).generateTypeScript(
+                    Input.from(ngxGenerator.types.toArray(new Type[]{})),
+                    Output.to(new File(outputPath + "/model.d.ts")));
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
+
     public void generate(Class<?> aClass, String path) {
         String name = aClass.getSimpleName();
         TsGenerator tsGenerator = new TsGenerator(name,
-                "import {Injectable} from '@angular/core';\n" +
+                "import {Inject, Injectable, Optional} from '@angular/core';\n" +
                         "import {HttpClient} from '@angular/common/http';\n" +
-                        "import {Observable} from 'rxjs';\n", "private http: HttpClient");
+                        "import {Observable} from 'rxjs';\n" +
+                        "import {APP_BASE_HREF} from '@angular/common';\n", "private http: HttpClient", "@Optional() @Inject(APP_BASE_HREF) private origin: string");
         Set<Method> methods = getMethodsAnnotatedWith(aClass, GetMapping.class);
         methods.addAll(getMethodsAnnotatedWith(aClass, PostMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, PutMapping.class));
@@ -81,33 +106,82 @@ public class NgxGenerator {
         tsGenerator.addMethods(
                 methods.stream().map(method -> {
                     String url = getUrl(method);
-                    String params = "param?";
+
+                    Set<String> params = new HashSet<>();
+
                     if (url.contains("{") && url.contains("}")) {
                         url = "`" + url.replaceAll("\\{(.+?)}", "\\${$1}") + "`";
-                        Set<String> paramsInUrl = getParamsInUrl(url);
-                        params = paramsInUrl.stream().collect(Collectors.joining(", ")) + ", " + params;
+                        params.addAll(getParamsInUrl(url));
                     } else
                         url = "'" + url + "'";
 
+
+                    Parameter[] parameters = method.getParameters();
+                    String body = null;
+                    String[] names = parameterNameDiscoverer.getParameterNames(method);
+                    Set<String> queryParams = new HashSet<>();
+                    for (int i = 0; i < parameters.length; i++) {
+                        Parameter parameter = parameters[i];
+                        if (excludes.contains(parameter.getType()) || Arrays.stream(parameter.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType())))
+                            continue;
+                        if (parameter.isAnnotationPresent(RequestBody.class)) {
+                            body = names[i];
+                            params.add(getTypedParameterName(names[i], parameter.getType(), returnTypeSimpleNames, false));
+                            continue;
+                        }
+                        params.add(getTypedParameterName(names[i], parameter.getType(), returnTypeSimpleNames, true));
+                        queryParams.add(names[i]);
+                    }
+
                     String methodName = method.getName();
                     String httpMethod = getMethod(method);
-                    String returnType = getReturnType(method, returnTypeSimpleNames);
-                    String paramsString = "param";
-                    if (httpMethod.equals("get") || methodName.equals("delete")) {
-                        paramsString = "{params: param}";
+                    this.typescriptModelAdd(method.getGenericReturnType());
+                    String returnType = makeFromTypeName(method.getGenericReturnType().getTypeName(), returnTypeSimpleNames);
+                    String ngxClientParams = url;
+
+                    if (httpMethod.equals("post") || methodName.equals("put")) {
+                        if (body == null)
+                            ngxClientParams += ", null";
+                        else
+                            ngxClientParams += ", " + body;
                     }
-                    return String.format(paramMethod, methodName, params, returnType, httpMethod, returnType, url, paramsString);
+                    if (!queryParams.isEmpty()) {
+                        ngxClientParams += ", " + String.format("{params: new HttpParams().%s}",
+                                queryParams.stream().map(s -> String.format("set('%s', String(%s))", s, s))
+                                        .collect(Collectors.joining(".")));
+                        tsGenerator.imports = tsGenerator.imports.replace("import {HttpClient} from '@angular/common/http';", "import {HttpClient, HttpParams} from '@angular/common/http';");
+                    }
+                    return String.format(
+                            "  %s(%s): Observable<%s> {\n" +
+                                    "    return this.http.%s<%s>(this.origin + %s);\n" +
+                                    "  }\n",
+                            methodName,
+                            params.size() == 0 ? "" : params.stream().collect(Collectors.joining(", ")),
+                            returnType,
+                            httpMethod,
+                            returnType,
+                            ngxClientParams);
                 }).collect(Collectors.joining("\n")));
         tsGenerator.addImports(returnTypeSimpleNames.stream()
-                .map(s -> String.format("import {%s} from './app';", s)).collect(Collectors.joining("\n")));
+                .map(s -> String.format("import {%s} from './model';", s)).collect(Collectors.joining("\n")));
         tsGenerator.saveResult(path);
     }
 
-    private String getReturnType(Method method, Set<String> returnTypeSimpleNames) {
-        return makeName(method.getGenericReturnType().getTypeName(), returnTypeSimpleNames);
+    private String getTypedParameterName(String name, Class<?> type, Set<String> returnTypeSimpleNames, boolean q) {
+        this.typescriptModelAdd(type);
+        return String.format("%s%s: %s", name, q ? "?" : "", makeFromTypeName(type.getTypeName(), returnTypeSimpleNames));
     }
 
-    private String makeName(String typeName, Set<String> returnTypeSimpleNames, String... args) {
+    public void typescriptModelAdd(Type type) {
+        if (excludes.contains(type))
+            return;
+        if (type.getClass().equals(Class.class) && Arrays.stream(((Class) type).getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType())))
+            return;
+        this.types.add(type);
+    }
+
+
+    private String makeFromTypeName(String typeName, Set<String> returnTypeSimpleNames, String... args) {
         if (!typeName.contains("<")) {
             String name = parsedName(typeName, returnTypeSimpleNames);
             if (defaultTypes.containsKey(name)) {
@@ -115,20 +189,20 @@ public class NgxGenerator {
                     return String.format(defaultTypes.get(name), args[0]);
                 return defaultTypes.get(name);
             }
-            if (!name.contains(","))
+            if (!name.contains(",")) {
                 returnTypeSimpleNames.add(name);
+            }
             if (args.length != 0)
                 return String.format("%s<%s>", name, args[0]);
-            System.out.println(name);
             return name;
         }
-        return makeName(typeName.substring(0, typeName.indexOf("<")), returnTypeSimpleNames,
-                makeName(typeName.substring(typeName.indexOf("<") + 1, typeName.lastIndexOf(">")), returnTypeSimpleNames));
+        return makeFromTypeName(typeName.substring(0, typeName.indexOf("<")), returnTypeSimpleNames,
+                makeFromTypeName(typeName.substring(typeName.indexOf("<") + 1, typeName.lastIndexOf(">")), returnTypeSimpleNames));
     }
 
     private String parsedName(String typeName, Set<String> returnTypeSimpleNames) {
         if (typeName.contains(",")) {
-            return Arrays.stream(typeName.split(",")).map(s -> this.makeName(s, returnTypeSimpleNames)).collect(Collectors.joining(", "));
+            return Arrays.stream(typeName.split(",")).map(s -> this.makeFromTypeName(s, returnTypeSimpleNames)).collect(Collectors.joining(", "));
         }
         if (typeName.contains("$"))
             return typeName.substring(typeName.lastIndexOf("$") + 1);
@@ -140,7 +214,7 @@ public class NgxGenerator {
         Pattern pattern = Pattern.compile("\\{(.+?)}");
         Matcher matcher = pattern.matcher(url);
         while (matcher.find()) {
-            result.add(matcher.group(1));
+            result.add(matcher.group(1) + ": string");
         }
         return result;
     }

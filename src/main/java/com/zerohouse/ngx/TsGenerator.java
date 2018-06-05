@@ -1,6 +1,5 @@
 package com.zerohouse.ngx;
 
-import com.google.common.base.CaseFormat;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -55,7 +54,7 @@ public class TsGenerator {
     }
 
     public void saveResult(String path) {
-        String file = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, String.format("%s.ts", name));
+        String file = String.format("%s.ts", name);
         try {
             FileUtils.write(new File(path + "/" + file), getResult(), "utf8");
         } catch (IOException e) {
