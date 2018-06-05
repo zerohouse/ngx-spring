@@ -5,7 +5,6 @@ import cz.habarta.typescript.generator.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
-import org.reflections.util.ClasspathHelper;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.stereotype.Controller;
@@ -60,17 +59,16 @@ public class NgxGenerator {
         this.excludes.add(aClass);
     }
 
-    public static void generate(String prefix, String packagePath, String outputPath) {
+    public void generate(String packagePath, String outputPath) {
         try {
-            NgxGenerator ngxGenerator = new NgxGenerator(prefix);
             Settings settings = new Settings();
             settings.outputKind = TypeScriptOutputKind.module;
             settings.jsonLibrary = JsonLibrary.jackson2;
-            Reflections reflections = new Reflections(new TypeAnnotationsScanner(), new SubTypesScanner(), ClasspathHelper.forPackage(packagePath));
+            Reflections reflections = new Reflections(packagePath, new TypeAnnotationsScanner(), new SubTypesScanner());
             Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Controller.class);
             classes.addAll(reflections.getTypesAnnotatedWith(RestController.class));
-            classes.removeAll(ngxGenerator.excludes);
-            classes.forEach(aClass -> ngxGenerator.generate(aClass, outputPath));
+            classes.removeAll(this.excludes);
+            classes.forEach(aClass -> this.generate(aClass, outputPath));
             TsGenerator tsGenerator = new TsGenerator("ApiService",
                     "import {Injectable} from '@angular/core';");
             classes.forEach(aClass -> {
@@ -80,7 +78,7 @@ public class NgxGenerator {
             });
             tsGenerator.saveResult(outputPath);
             new TypeScriptGenerator(settings).generateTypeScript(
-                    Input.from(ngxGenerator.types.toArray(new Type[]{})),
+                    Input.from(this.types.toArray(new Type[]{})),
                     Output.to(new File(outputPath + "/model.d.ts")));
 
         } catch (Exception e) {
