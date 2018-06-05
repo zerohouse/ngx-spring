@@ -3,6 +3,7 @@
 To get a Git project into your build:
 
 ####Step 1. Add the JitPack repository to your build file
+
     <repositories>
         <repository>
             <id>jitpack.io</id>
@@ -10,6 +11,7 @@ To get a Git project into your build:
         </repository>
     </repositories>
 ####Step 2. Add the dependency
+
 	<dependency>
 	    <groupId>com.github.zerohouse</groupId>
 	    <artifactId>ngx-spring</artifactId>
