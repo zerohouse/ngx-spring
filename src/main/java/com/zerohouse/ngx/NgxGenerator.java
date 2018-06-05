@@ -21,7 +21,8 @@ public class NgxGenerator {
 
     Map<String, String> defaultTypes;
 
-    public void before() {
+    public NgxGenerator(String prefix) {
+        this.prefix = prefix;
         defaultTypes = new HashMap<>();
         defaultTypes.put("boolean", "boolean");
         defaultTypes.put("Boolean", "boolean");
