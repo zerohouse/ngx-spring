@@ -26,5 +26,5 @@ To get a Git project into your build:
             ngxGenerator.excludeAdd(Entity.class);
             ngxGenerator.excludeAdd(Logged.class);
             ngxGenerator.excludeAdd(ExceptionHandleController.class);
-            ngxGenerator.generate("com.icon", "./../../WebstormProjects/icon-client/src/app");
+            ngxGenerator.generate("com.abc", "./../../abc-client/src/app");
     }
