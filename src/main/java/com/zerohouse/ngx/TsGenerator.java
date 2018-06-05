@@ -37,9 +37,12 @@ public class TsGenerator {
     private String constructor() {
         if (dependencies == null || dependencies.size() == 0)
             return "";
-        return String.format("  constructor(%s) {\nif (!origin)\n" +
-                "      this.origin = '';" +
-                "  }\n\n", dependencies.stream().collect(Collectors.joining(", ")));
+        String origin = "";
+        if (dependencies.stream().anyMatch(s -> s.contains("APP_BASE_HREF")))
+            origin = "       if (!origin)\n" +
+                    "         this.origin = '';";
+        return String.format("  constructor(%s) {\n%s" +
+                "  }\n\n", origin, dependencies.stream().collect(Collectors.joining(", ")));
     }
 
     public void addImports(String collect) {
