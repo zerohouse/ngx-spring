@@ -42,7 +42,7 @@ public class TsGenerator {
             origin = "       if (!origin)\n" +
                     "         this.origin = '';";
         return String.format("  constructor(%s) {\n%s" +
-                "  }\n\n", origin, dependencies.stream().collect(Collectors.joining(", ")));
+                "  }\n\n", dependencies.stream().collect(Collectors.joining(", ")), origin);
     }
 
     public void addImports(String collect) {
