@@ -2,6 +2,7 @@ package com.zerohouse.ngx;
 
 
 import cz.habarta.typescript.generator.*;
+import org.codehaus.plexus.util.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
@@ -74,7 +75,7 @@ public class NgxGenerator {
             classes.forEach(aClass -> {
                 String name = aClass.getSimpleName().replace("Controller", "");
                 tsGenerator.addImports(String.format("import {%s} from './%s';", aClass.getSimpleName(), aClass.getSimpleName()));
-                tsGenerator.addDependency(String.format("public %s: %s", name.toLowerCase(), aClass.getSimpleName()));
+                tsGenerator.addDependency(String.format("public %s: %s", StringUtils.uncapitalise(name), aClass.getSimpleName()));
             });
             tsGenerator.saveResult(outputPath);
             new TypeScriptGenerator(settings).generateTypeScript(
