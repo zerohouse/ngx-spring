@@ -15,7 +15,7 @@ To get a Git project into your build:
 	<dependency>
 	    <groupId>com.github.zerohouse</groupId>
 	    <artifactId>ngx-spring</artifactId>
-	    <version>1.0.5</version>
+	    <version>1.0.7</version>
 	</dependency>
 	
 	
