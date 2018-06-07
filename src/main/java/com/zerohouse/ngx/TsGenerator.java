@@ -14,12 +14,10 @@ public class TsGenerator {
 
     String imports;
 
-    String head = "@Injectable({\n" +
-            "  providedIn: 'root'\n" +
-            "})\n" +
+    String head = "@Injectable()\n" +
             "export class %s {\n";
 
-    String end = "\n}\n";
+    String end = "}\n";
 
     String methods = "";
     Set<String> dependencies = new HashSet<>();
@@ -58,11 +56,15 @@ public class TsGenerator {
     }
 
     public void saveResult(String path) {
-        String file = String.format("%s.ts", name);
+        String file = getFileName(name) + ".ts";
         try {
             FileUtils.write(new File(path + "/" + file), getResult(), "utf8");
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String getFileName(String name) {
+        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_DOT, String.format("%s", name));
     }
 }

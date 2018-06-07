@@ -2,6 +2,7 @@ package com.zerohouse.ngx;
 
 
 import cz.habarta.typescript.generator.*;
+import org.apache.commons.io.FileUtils;
 import org.codehaus.plexus.util.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -35,9 +36,9 @@ public class NgxGenerator {
     Set<Type> types = new HashSet<>();
 
     public NgxGenerator(String urlPrefix) {
-        this.excludeAdd(HttpServletRequest.class);
-        this.excludeAdd(HttpServletResponse.class);
-        this.excludeAdd(PathVariable.class);
+        this.exclude(HttpServletRequest.class);
+        this.exclude(HttpServletResponse.class);
+        this.exclude(PathVariable.class);
         this.prefix = urlPrefix;
         defaultTypes = new HashMap<>();
         defaultTypes.put("boolean", "boolean");
@@ -56,11 +57,11 @@ public class NgxGenerator {
         defaultTypes.put("Map", "Map<%s>");
     }
 
-    public void excludeAdd(Class<?> aClass) {
+    public void exclude(Class<?> aClass) {
         this.excludes.add(aClass);
     }
 
-    public void generate(String packagePath, String outputPath) {
+    public void generateControllers(String packagePath, String outputPath) {
         try {
             Settings settings = new Settings();
             settings.outputKind = TypeScriptOutputKind.module;
@@ -69,18 +70,70 @@ public class NgxGenerator {
             Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Controller.class);
             classes.addAll(reflections.getTypesAnnotatedWith(RestController.class));
             classes.removeAll(this.excludes);
-            classes.forEach(aClass -> this.generate(aClass, outputPath));
-            TsGenerator tsGenerator = new TsGenerator("ApiService",
+            classes.forEach(aClass -> this.generateControllers(aClass, outputPath));
+            TsGenerator apiService = new TsGenerator("ApiService",
                     "import {Injectable} from '@angular/core';");
             classes.forEach(aClass -> {
                 String name = aClass.getSimpleName().replace("Controller", "");
-                tsGenerator.addImports(String.format("import {%s} from './%s';", aClass.getSimpleName(), aClass.getSimpleName()));
-                tsGenerator.addDependency(String.format("public %s: %s", StringUtils.uncapitalise(name), aClass.getSimpleName()));
+                apiService.addImports(String.format("import {%s} from './controllers/%s';", aClass.getSimpleName(), TsGenerator.getFileName(aClass.getSimpleName())));
+                apiService.addDependency(String.format("public %s: %s", StringUtils.uncapitalise(name), aClass.getSimpleName()));
             });
-            tsGenerator.saveResult(outputPath);
+            apiService.saveResult(outputPath);
+            TsGenerator ngxModule = new TsGenerator("NgxSpringModule",
+                    "import {NgModule} from '@angular/core';\n" +
+                            "import {HttpClientModule} from '@angular/common/http';\n" +
+                            "import {ApiService} from './api.service';");
+            ngxModule.head = "@NgModule({\n" +
+                    "  imports: [HttpClientModule],\n" +
+                    "  providers: [ApiService, " +
+                    classes.stream().map(Class::getSimpleName).collect(Collectors.joining(", ")) +
+                    "]\n" +
+                    "})\nexport class %s {\n";
+            classes.forEach(aClass -> {
+                ngxModule.addImports(String.format("import {%s} from './controllers/%s';", aClass.getSimpleName(), TsGenerator.getFileName(aClass.getSimpleName())));
+            });
+            FileUtils.write(new File(outputPath + "/api.http.ts"), "import {Inject, Injectable, Optional} from '@angular/core';\n" +
+                    "import {HttpClient} from '@angular/common/http';\n" +
+                    "import {APP_BASE_HREF} from '@angular/common';\n" +
+                    "import {Observable} from 'rxjs';\n" +
+                    "\n" +
+                    "@Injectable()\n" +
+                    "export class ApiHttp {\n" +
+                    "  constructor(private http: HttpClient, @Inject(APP_BASE_HREF) @Optional() private readonly origin: string) {\n" +
+                    "    if (!origin)\n" +
+                    "      this.origin = '';\n" +
+                    "  }\n" +
+                    "\n" +
+                    "  put<T>(url, body?, queryParams?): Observable<T> {\n" +
+                    "    return this.http.put<T>(this.origin + url, body, {params: this.valid(queryParams)});\n" +
+                    "  }\n" +
+                    "\n" +
+                    "  delete<T>(url, queryParams?): Observable<T> {\n" +
+                    "    return this.http.delete<T>(this.origin + url, {params: this.valid(queryParams)});\n" +
+                    "  }\n" +
+                    "\n" +
+                    "  post<T>(url, body?, queryParams?): Observable<T> {\n" +
+                    "    return this.http.post<T>(this.origin + url, body, {params: this.valid(queryParams)});\n" +
+                    "  }\n" +
+                    "\n" +
+                    "  get<T>(url, queryParams?): Observable<T> {\n" +
+                    "    return this.http.get<T>(this.origin + url, {params: this.valid(queryParams)});\n" +
+                    "  }\n" +
+                    "\n" +
+                    "  private valid(queryParams) {\n" +
+                    "    if (queryParams === null || queryParams === undefined)\n" +
+                    "      return null;\n" +
+                    "    Object.keys(queryParams).forEach(value => {\n" +
+                    "      if (queryParams[value] === null || queryParams[value] === undefined)\n" +
+                    "        delete  queryParams[value];\n" +
+                    "    });\n" +
+                    "    return queryParams;\n" +
+                    "  }\n" +
+                    "}\n", "utf8");
+            ngxModule.saveResult(outputPath);
             new TypeScriptGenerator(settings).generateTypeScript(
                     Input.from(this.types.toArray(new Type[]{})),
-                    Output.to(new File(outputPath + "/model.d.ts")));
+                    Output.to(new File(outputPath + "/api.model.d.ts")));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,13 +142,14 @@ public class NgxGenerator {
     }
 
 
-    public void generate(Class<?> aClass, String path) {
+    public void generateControllers(Class<?> aClass, String path) {
         String name = aClass.getSimpleName();
         TsGenerator tsGenerator = new TsGenerator(name,
-                "import {Inject, Injectable, Optional} from '@angular/core';\n" +
-                        "import {HttpClient} from '@angular/common/http';\n" +
+                "import {Injectable} from '@angular/core';\n" +
                         "import {Observable} from 'rxjs';\n" +
-                        "import {APP_BASE_HREF} from '@angular/common';\n", "private http: HttpClient", "@Optional() @Inject(APP_BASE_HREF) private origin: string");
+                        "import {ApiHttp} from '../api.http';\n",
+
+                "private http: ApiHttp");
         Set<Method> methods = getMethodsAnnotatedWith(aClass, GetMapping.class);
         methods.addAll(getMethodsAnnotatedWith(aClass, PostMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, PutMapping.class));
@@ -145,14 +199,13 @@ public class NgxGenerator {
                             ngxClientParams += ", " + body;
                     }
                     if (!queryParams.isEmpty()) {
-                        ngxClientParams += ", " + String.format("{params: new HttpParams().%s}",
-                                queryParams.stream().map(s -> String.format("set('%s', String(%s))", s, s))
-                                        .collect(Collectors.joining(".")));
-                        tsGenerator.imports = tsGenerator.imports.replace("import {HttpClient} from '@angular/common/http';", "import {HttpClient, HttpParams} from '@angular/common/http';");
+                        ngxClientParams += ", " + String.format("{%s}",
+                                queryParams.stream().map(s -> String.format("%s: %s", s, s))
+                                        .collect(Collectors.joining(", ")));
                     }
                     return String.format(
                             "  %s(%s): Observable<%s> {\n" +
-                                    "    return this.http.%s<%s>(this.origin + %s);\n" +
+                                    "    return this.http.%s<%s>(%s);\n" +
                                     "  }\n",
                             methodName,
                             params.size() == 0 ? "" : params.stream().collect(Collectors.joining(", ")),
@@ -162,8 +215,8 @@ public class NgxGenerator {
                             ngxClientParams);
                 }).collect(Collectors.joining("\n")));
         tsGenerator.addImports(returnTypeSimpleNames.stream()
-                .map(s -> String.format("import {%s} from './model';", s)).collect(Collectors.joining("\n")));
-        tsGenerator.saveResult(path);
+                .map(s -> String.format("import {%s} from '../api.model';", s)).collect(Collectors.joining("\n")));
+        tsGenerator.saveResult(path + "/controllers");
     }
 
     private String getTypedParameterName(String name, Class<?> type, Set<String> returnTypeSimpleNames, boolean q) {

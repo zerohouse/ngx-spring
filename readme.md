@@ -15,7 +15,7 @@ To get a Git project into your build:
 	<dependency>
 	    <groupId>com.github.zerohouse</groupId>
 	    <artifactId>ngx-spring</artifactId>
-	    <version>1.0.1</version>
+	    <version>1.0.5</version>
 	</dependency>
 	
 	
@@ -23,8 +23,20 @@ To get a Git project into your build:
     @Postcontstruct
     public void generate() {
             NgxGenerator ngxGenerator = new NgxGenerator("/api");
-            ngxGenerator.excludeAdd(Entity.class);
-            ngxGenerator.excludeAdd(Logged.class);
-            ngxGenerator.excludeAdd(ExceptionHandleController.class);
+            ngxGenerator.exclude(Entity.class);
+            ngxGenerator.exclude(Logged.class);
+            ngxGenerator.exclude(ExceptionHandleController.class);
             ngxGenerator.generate("com.abc", "./../../abc-client/src/app");
     }
+
+### In Your NG MODULE
+
+    import {NgxSpringModule} from '....path.../ngx.spring.module';
+    @NgModule({
+        imports: [
+          ...
+          NgxSpringModule
+          ...
+        ],
+        ...
+     })
