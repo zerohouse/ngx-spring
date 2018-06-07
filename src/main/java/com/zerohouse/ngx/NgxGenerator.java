@@ -61,7 +61,7 @@ public class NgxGenerator {
         this.excludes.add(aClass);
     }
 
-    public void generateControllers(String packagePath, String outputPath) {
+    public void generate(String packagePath, String outputPath) {
         try {
             Settings settings = new Settings();
             settings.outputKind = TypeScriptOutputKind.module;
@@ -142,7 +142,7 @@ public class NgxGenerator {
     }
 
 
-    public void generateControllers(Class<?> aClass, String path) {
+    private void generateControllers(Class<?> aClass, String path) {
         String name = aClass.getSimpleName();
         TsGenerator tsGenerator = new TsGenerator(name,
                 "import {Injectable} from '@angular/core';\n" +
