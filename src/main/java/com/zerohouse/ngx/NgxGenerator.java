@@ -82,10 +82,11 @@ public class NgxGenerator {
             TsGenerator ngxModule = new TsGenerator("NgxSpringModule",
                     "import {NgModule} from '@angular/core';\n" +
                             "import {HttpClientModule} from '@angular/common/http';\n" +
-                            "import {ApiService} from './api.service';");
+                            "import {ApiService} from './api.service';\n"+
+                            "import {ApiHttp} from './api.http';");
             ngxModule.head = "@NgModule({\n" +
                     "  imports: [HttpClientModule],\n" +
-                    "  providers: [ApiService, " +
+                    "  providers: [ApiService, ApiHttp, " +
                     classes.stream().map(Class::getSimpleName).collect(Collectors.joining(", ")) +
                     "]\n" +
                     "})\nexport class %s {\n";
