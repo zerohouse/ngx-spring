@@ -6,7 +6,7 @@
     <groupId>com.zerohouse.ngx</groupId>
     <artifactId>ngx-generator</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <name>ngx-generator-maven-plugin</name>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -38,5 +38,14 @@
             <artifactId>commons-io</artifactId>
             <version>2.5</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+    <build>
+        <testSourceDirectory>src/test</testSourceDirectory>
+    </build>
 </project>
