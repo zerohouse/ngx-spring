@@ -132,8 +132,9 @@ public class NgxGenerator {
                     "  }\n" +
                     "}\n", "utf8");
             ngxModule.saveResult(outputPath);
-            String enums = this.types.stream().filter(type -> type.getClass().isAssignableFrom(Enum.class)).map(type -> this.enumValueArray((Class<? extends Enum>) type)).collect(Collectors.joining("\n"));
-            FileUtils.write(new File(outputPath + "/enum.values.ts"), enums, "utf8");
+            String enums = this.types.stream().filter(type -> Enum.class.isAssignableFrom((Class<?>) type)).map(type -> this.enumValueArray((Class<? extends Enum>) type)).collect(Collectors.joining("\n"));
+            if (enums != null && !"".equals(enums))
+                FileUtils.write(new File(outputPath + "/enum.values.ts"), enums, "utf8");
             new TypeScriptGenerator(settings).generateTypeScript(
                     Input.from(this.types.toArray(new Type[]{})),
                     Output.to(new File(outputPath + "/api.model.d.ts")));
