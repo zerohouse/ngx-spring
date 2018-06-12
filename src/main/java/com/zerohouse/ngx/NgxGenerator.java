@@ -82,7 +82,7 @@ public class NgxGenerator {
             TsGenerator ngxModule = new TsGenerator("NgxSpringModule",
                     "import {NgModule} from '@angular/core';\n" +
                             "import {HttpClientModule} from '@angular/common/http';\n" +
-                            "import {ApiService} from './api.service';\n"+
+                            "import {ApiService} from './api.service';\n" +
                             "import {ApiHttp} from './api.http';");
             ngxModule.head = "@NgModule({\n" +
                     "  imports: [HttpClientModule],\n" +
@@ -240,7 +240,8 @@ public class NgxGenerator {
             if (defaultTypes.containsKey(name)) {
                 if (args.length != 0)
                     return String.format(defaultTypes.get(name), args[0]);
-                return defaultTypes.get(name);
+                return String.format(defaultTypes.get(name), "any");
+
             }
             if (!name.contains(",")) {
                 returnTypeSimpleNames.add(name);
