@@ -246,7 +246,8 @@ public class NgxGenerator {
             if (defaultTypes.containsKey(name)) {
                 if (args.length != 0)
                     return String.format(defaultTypes.get(name), args[0]);
-                return defaultTypes.get(name);
+                return String.format(defaultTypes.get(name), "any");
+
             }
             if (!name.contains(",")) {
                 returnTypeSimpleNames.add(name);
