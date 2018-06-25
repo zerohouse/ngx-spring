@@ -82,7 +82,7 @@ public class NgxGenerator {
             TsGenerator ngxModule = new TsGenerator("NgxSpringModule",
                     "import {NgModule} from '@angular/core';\n" +
                             "import {HttpClientModule} from '@angular/common/http';\n" +
-                            "import {ApiService} from './api.service';\n"+
+                            "import {ApiService} from './api.service';\n" +
                             "import {ApiHttp} from './api.http';");
             ngxModule.head = "@NgModule({\n" +
                     "  imports: [HttpClientModule],\n" +
@@ -161,7 +161,7 @@ public class NgxGenerator {
                 methods.stream().map(method -> {
                     String url = getUrl(method);
 
-                    List<String> params = new ArrayList<>();
+                    List<Param> params = new ArrayList<>();
 
                     if (url.contains("{") && url.contains("}")) {
                         url = "`" + url.replaceAll("\\{(.+?)}", "\\${$1}") + "`";
@@ -180,10 +180,13 @@ public class NgxGenerator {
                             continue;
                         if (parameter.isAnnotationPresent(RequestBody.class)) {
                             body = names[i];
-                            params.add(0, getTypedParameterName(names[i], parameter.getType(), returnTypeSimpleNames, false));
+                            this.typescriptModelAdd(parameter.getType());
+                            params.add(new Param(names[i], parameter.getType().getSimpleName(), parameter.getAnnotation(RequestBody.class).required()));
                             continue;
                         }
-                        params.add(getTypedParameterName(names[i], parameter.getType(), returnTypeSimpleNames, true));
+                        this.typescriptModelAdd(parameter.getType());
+                        RequestParam requestParam = parameter.getAnnotation(RequestParam.class);
+                        params.add(new Param(names[i], parameter.getType().getSimpleName(), requestParam != null && requestParam.required()));
                         queryParams.add(names[i]);
                     }
 
@@ -209,7 +212,10 @@ public class NgxGenerator {
                                     "    return this.http.%s<%s>(%s);\n" +
                                     "  }\n",
                             methodName,
-                            params.size() == 0 ? "" : params.stream().collect(Collectors.joining(", ")),
+                            params.size() == 0 ? "" :
+                                    params.stream().sorted((o1, o2) -> Boolean.compare(o2.required, o1.required)).map(Param::toParamString).collect(Collectors.joining(", ")
+
+                                    ),
                             returnType,
                             httpMethod,
                             returnType,
@@ -262,12 +268,12 @@ public class NgxGenerator {
         return typeName.substring(typeName.lastIndexOf(".") + 1);
     }
 
-    private Set<String> getParamsInUrl(String url) {
-        Set<String> result = new HashSet<>();
+    private Set<Param> getParamsInUrl(String url) {
+        Set<Param> result = new HashSet<>();
         Pattern pattern = Pattern.compile("\\{(.+?)}");
         Matcher matcher = pattern.matcher(url);
         while (matcher.find()) {
-            result.add(matcher.group(1) + ": string");
+            result.add(new Param(matcher.group(1), "string", true));
         }
         return result;
     }
