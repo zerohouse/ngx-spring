@@ -269,7 +269,7 @@ public class NgxGenerator {
         Pattern pattern = Pattern.compile("\\{(.+?)}");
         Matcher matcher = pattern.matcher(url);
         while (matcher.find()) {
-            result.add(new Param(matcher.group(1), "string", true));
+            result.add(new Param(matcher.group(1), "String", true));
         }
         return result;
     }
