@@ -1,8 +1,8 @@
 package com.zerohouse.ngx;
 
 public class Param {
-    private String name;
-    private String type;
+    String name;
+    String type;
     boolean required;
 
     Param(String name, String type, boolean required) {
@@ -11,11 +11,4 @@ public class Param {
         this.required = required;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    String toParamString() {
-        return String.format("%s%s: %s", this.name, this.required ? "" : "?", this.type);
-    }
 }

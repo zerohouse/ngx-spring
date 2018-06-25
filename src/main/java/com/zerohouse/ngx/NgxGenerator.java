@@ -213,9 +213,9 @@ public class NgxGenerator {
                                     "  }\n",
                             methodName,
                             params.size() == 0 ? "" :
-                                    params.stream().sorted((o1, o2) -> Boolean.compare(o2.required, o1.required)).map(Param::toParamString).collect(Collectors.joining(", ")
-
-                                    ),
+                                    params.stream().sorted((o1, o2) -> Boolean.compare(o2.required, o1.required)).map(param ->
+                                            String.format("%s%s: %s", param.name, param.required ? "" : "?", makeFromTypeName(param.type, returnTypeSimpleNames))
+                                    ).collect(Collectors.joining(", ")),
                             returnType,
                             httpMethod,
                             returnType,
@@ -224,11 +224,6 @@ public class NgxGenerator {
         tsGenerator.addImports(returnTypeSimpleNames.stream()
                 .map(s -> String.format("import {%s} from '../api.model';", s)).collect(Collectors.joining("\n")));
         tsGenerator.saveResult(path + "/controllers");
-    }
-
-    private String getTypedParameterName(String name, Class<?> type, Set<String> returnTypeSimpleNames, boolean q) {
-        this.typescriptModelAdd(type);
-        return String.format("%s%s: %s", name, q ? "?" : "", makeFromTypeName(type.getTypeName(), returnTypeSimpleNames));
     }
 
     public void typescriptModelAdd(Type type) {
