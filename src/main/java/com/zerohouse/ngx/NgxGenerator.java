@@ -186,7 +186,7 @@ public class NgxGenerator {
                         }
                         this.typescriptModelAdd(parameter.getType());
                         RequestParam requestParam = parameter.getAnnotation(RequestParam.class);
-                        params.add(new Param(names[i], parameter.getType().getSimpleName(), requestParam != null && requestParam.required() && !requestParam.defaultValue().equals("\n\t\t\n\t\t\n\ue000\ue001\ue002\n\t\t\t\t\n")));
+                        params.add(new Param(names[i], parameter.getType().getSimpleName(), requestParam != null && requestParam.required() && requestParam.defaultValue().equals("\n\t\t\n\t\t\n\ue000\ue001\ue002\n\t\t\t\t\n")));
                         queryParams.add(names[i]);
                     }
 
