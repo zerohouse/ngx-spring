@@ -33,7 +33,7 @@ public class NgxGenerator {
 
     Map<String, String> defaultTypes;
 
-    Set<Type> types = new LinkedHashSet<>();
+    LinkedHashSet<Type> types = new LinkedHashSet<>();
 
     public NgxGenerator(String urlPrefix) {
         this.exclude(HttpServletRequest.class);
@@ -134,8 +134,10 @@ public class NgxGenerator {
                     "  }\n" +
                     "}\n", "utf8");
             ngxModule.saveResult(outputPath);
+            List<Type> types = new ArrayList<>(this.types);
+            types.sort(Comparator.comparing(Type::getTypeName));
             new TypeScriptGenerator(settings).generateTypeScript(
-                    Input.from(this.types.toArray(new Type[]{})),
+                    Input.from(types.toArray(new Type[]{})),
                     Output.to(new File(outputPath + "/api.model.d.ts")));
 
         } catch (Exception e) {
