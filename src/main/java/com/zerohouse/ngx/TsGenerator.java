@@ -5,7 +5,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,7 +20,7 @@ public class TsGenerator {
     String end = "}\n";
 
     String methods = "";
-    Set<String> dependencies = new HashSet<>();
+    Set<String> dependencies = new LinkedHashSet<>();
 
     public TsGenerator(String name, String imports, String... dependencies) {
         this.name = name;

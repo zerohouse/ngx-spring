@@ -33,7 +33,7 @@ public class NgxGenerator {
 
     Map<String, String> defaultTypes;
 
-    Set<Type> types = new HashSet<>();
+    Set<Type> types = new LinkedHashSet<>();
 
     public NgxGenerator(String urlPrefix) {
         this.exclude(HttpServletRequest.class);
@@ -156,7 +156,7 @@ public class NgxGenerator {
         methods.addAll(getMethodsAnnotatedWith(aClass, PutMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, DeleteMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, RequestMapping.class));
-        Set<String> returnTypeSimpleNames = new HashSet<>();
+        Set<String> returnTypeSimpleNames = new LinkedHashSet<>();
         tsGenerator.addMethods(
                 methods.stream().map(method -> {
                     String url = getUrl(method);
@@ -173,7 +173,7 @@ public class NgxGenerator {
                     Parameter[] parameters = method.getParameters();
                     String body = null;
                     String[] names = parameterNameDiscoverer.getParameterNames(method);
-                    Set<String> queryParams = new HashSet<>();
+                    Set<String> queryParams = new LinkedHashSet<>();
                     for (int i = 0; i < parameters.length; i++) {
                         Parameter parameter = parameters[i];
                         if (excludes.contains(parameter.getType()) || Arrays.stream(parameter.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType())))
@@ -265,7 +265,7 @@ public class NgxGenerator {
     }
 
     private Set<Param> getParamsInUrl(String url) {
-        Set<Param> result = new HashSet<>();
+        Set<Param> result = new LinkedHashSet<>();
         Pattern pattern = Pattern.compile("\\{(.+?)}");
         Matcher matcher = pattern.matcher(url);
         while (matcher.find()) {
@@ -321,7 +321,7 @@ public class NgxGenerator {
     }
 
     public static Set<Method> getMethodsAnnotatedWith(final Class<?> type, final Class<? extends Annotation> annotation) {
-        final Set<Method> methods = new HashSet<>();
+        final Set<Method> methods = new LinkedHashSet<>();
         Class<?> klass = type;
         while (klass != Object.class) { // need to iterated thought hierarchy in order to retrieve methods from above the current instance
             final List<Method> allMethods = new ArrayList<Method>(Arrays.asList(klass.getDeclaredMethods()));
