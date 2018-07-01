@@ -67,9 +67,11 @@ public class NgxGenerator {
             settings.outputKind = TypeScriptOutputKind.module;
             settings.jsonLibrary = JsonLibrary.jackson2;
             Reflections reflections = new Reflections(packagePath, new TypeAnnotationsScanner(), new SubTypesScanner());
-            Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Controller.class);
+            List<Class<?>> classes = new ArrayList<>();
+            classes.addAll(reflections.getTypesAnnotatedWith(Controller.class));
             classes.addAll(reflections.getTypesAnnotatedWith(RestController.class));
             classes.removeAll(this.excludes);
+            classes.sort(Comparator.comparing(Class::getName));
             classes.forEach(aClass -> this.generateControllers(aClass, outputPath));
             TsGenerator apiService = new TsGenerator("ApiService",
                     "import {Injectable} from '@angular/core';");
