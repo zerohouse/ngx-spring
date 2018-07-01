@@ -151,25 +151,23 @@ public class NgxGenerator {
                         "import {ApiHttp} from '../api.http';\n",
 
                 "private http: ApiHttp");
-        Set<Method> methods = getMethodsAnnotatedWith(aClass, GetMapping.class);
+        List<Method> methods = new ArrayList<>();
+        methods.addAll(getMethodsAnnotatedWith(aClass, GetMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, PostMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, PutMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, DeleteMapping.class));
         methods.addAll(getMethodsAnnotatedWith(aClass, RequestMapping.class));
+        methods.sort(Comparator.comparing(Method::getName));
         Set<String> returnTypeSimpleNames = new LinkedHashSet<>();
         tsGenerator.addMethods(
                 methods.stream().map(method -> {
                     String url = getUrl(method);
-
                     List<Param> params = new ArrayList<>();
-
                     if (url.contains("{") && url.contains("}")) {
                         url = "`" + url.replaceAll("\\{(.+?)}", "\\${$1}") + "`";
                         params.addAll(getParamsInUrl(url));
                     } else
                         url = "'" + url + "'";
-
-
                     Parameter[] parameters = method.getParameters();
                     String body = null;
                     String[] names = parameterNameDiscoverer.getParameterNames(method);
