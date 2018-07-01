@@ -66,6 +66,7 @@ public class NgxGenerator {
             Settings settings = new Settings();
             settings.outputKind = TypeScriptOutputKind.module;
             settings.jsonLibrary = JsonLibrary.jackson2;
+            settings.noFileComment = true;
             Reflections reflections = new Reflections(packagePath, new TypeAnnotationsScanner(), new SubTypesScanner());
             List<Class<?>> classes = new ArrayList<>();
             classes.addAll(reflections.getTypesAnnotatedWith(Controller.class));
