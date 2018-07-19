@@ -52,6 +52,7 @@ public class NgxGenerator {
         defaultTypes.put("BigDecimal", "number");
         defaultTypes.put("BigInteger", "number");
         defaultTypes.put("String", "string");
+        defaultTypes.put("Date", "Date");
         defaultTypes.put("List", "%s[]");
         defaultTypes.put("Set", "%s[]");
         defaultTypes.put("Map", "Map<%s>");
