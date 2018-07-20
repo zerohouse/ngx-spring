@@ -225,7 +225,7 @@ public class NgxGenerator {
                             returnType,
                             ngxClientParams);
                 }).collect(Collectors.joining("\n")));
-        tsGenerator.addImports(String.format("import {%s} from '../api.model';", returnTypeSimpleNames.stream().collect(Collectors.joining(", "))));
+        tsGenerator.addImports(String.format("import {%s} from '../api.model';", returnTypeSimpleNames.stream().sorted(Comparator.comparing(s -> s)).collect(Collectors.joining(", "))));
         tsGenerator.saveResult(path + "/controllers");
     }
 
