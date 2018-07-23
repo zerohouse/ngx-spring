@@ -24,7 +24,7 @@ public class TsGenerator {
 
     public TsGenerator(String name, String imports, String... dependencies) {
         this.name = name;
-        this.imports = imports;
+        this.imports = "/* tslint:disable */\n" + imports;
         this.dependencies.addAll(Arrays.asList(dependencies));
     }
 

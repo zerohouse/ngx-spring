@@ -1,6 +1,5 @@
 package com.zerohouse.ngx;
 
-
 import cz.habarta.typescript.generator.*;
 import org.apache.commons.io.FileUtils;
 import org.codehaus.plexus.util.StringUtils;
@@ -54,8 +53,12 @@ public class NgxGenerator {
         defaultTypes.put("String", "string");
         defaultTypes.put("Date", "Date");
         defaultTypes.put("List", "%s[]");
+        defaultTypes.put("ArrayList", "%s[]");
         defaultTypes.put("Set", "%s[]");
+        defaultTypes.put("HashSet", "%s[]");
         defaultTypes.put("Map", "Map<%s>");
+        defaultTypes.put("HashMap", "Map<%s>");
+        defaultTypes.put("Object", "any");
     }
 
     public void exclude(Class<?> aClass) {
@@ -97,7 +100,7 @@ public class NgxGenerator {
             classes.forEach(aClass -> {
                 ngxModule.addImports(String.format("import {%s} from './controllers/%s';", aClass.getSimpleName(), TsGenerator.getFileName(aClass.getSimpleName())));
             });
-            FileUtils.write(new File(outputPath + "/api.http.ts"), "import {Inject, Injectable, Optional} from '@angular/core';\n" +
+            FileUtils.write(new File(outputPath + "/api.http.ts"), "/* tslint:disable */\nimport {Inject, Injectable, Optional} from '@angular/core';\n" +
                     "import {HttpClient} from '@angular/common/http';\n" +
                     "import {APP_BASE_HREF} from '@angular/common';\n" +
                     "import {Observable} from 'rxjs';\n" +
@@ -147,6 +150,7 @@ public class NgxGenerator {
         }
 
     }
+
 
 
     private void generateControllers(Class<?> aClass, String path) {
@@ -229,6 +233,7 @@ public class NgxGenerator {
         tsGenerator.saveResult(path + "/controllers");
     }
 
+
     public void typescriptModelAdd(Type type) {
         if (excludes.contains(type))
             return;
@@ -237,7 +242,6 @@ public class NgxGenerator {
         this.types.add(type);
     }
 
-
     private String makeFromTypeName(String typeName, Set<String> returnTypeSimpleNames, String... args) {
         if (!typeName.contains("<")) {
             String name = parsedName(typeName, returnTypeSimpleNames);
@@ -245,7 +249,6 @@ public class NgxGenerator {
                 if (args.length != 0)
                     return String.format(defaultTypes.get(name), args[0]);
                 return String.format(defaultTypes.get(name), "any");
-
             }
             if (!name.contains(",")) {
                 returnTypeSimpleNames.add(name);
@@ -291,6 +294,8 @@ public class NgxGenerator {
         if (method.isAnnotationPresent(PutMapping.class) && !result.contains(RequestMethod.PUT))
             result.add(RequestMethod.PUT);
         result.toArray(new RequestMethod[0]);
+        if (result.size() == 0)
+            return "get";
         return result.get(0).toString().toLowerCase();
     }
 
