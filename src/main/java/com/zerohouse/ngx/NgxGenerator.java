@@ -112,20 +112,20 @@ public class NgxGenerator {
                     "      this.origin = '';\n" +
                     "  }\n" +
                     "\n" +
-                    "  put<T>(url, body?, queryParams?): Observable<T> {\n" +
-                    "    return this.http.put<T>(this.origin + url, body, {params: this.valid(queryParams)});\n" +
+                    "  put<T>(url, body?, queryParams?, type?): Observable<T> {\n" +
+                    "    return this.http.put<T>(this.origin + url, body, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
-                    "  delete<T>(url, queryParams?): Observable<T> {\n" +
-                    "    return this.http.delete<T>(this.origin + url, {params: this.valid(queryParams)});\n" +
+                    "  delete<T>(url, queryParams?, type?): Observable<T> {\n" +
+                    "    return this.http.delete<T>(this.origin + url, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
-                    "  post<T>(url, body?, queryParams?): Observable<T> {\n" +
-                    "    return this.http.post<T>(this.origin + url, body, {params: this.valid(queryParams)});\n" +
+                    "  post<T>(url, body?, queryParams?, type?): Observable<T> {\n" +
+                    "    return this.http.post<T>(this.origin + url, body, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
-                    "  get<T>(url, queryParams?): Observable<T> {\n" +
-                    "    return this.http.get<T>(this.origin + url, {params: this.valid(queryParams)});\n" +
+                    "  get<T>(url, queryParams?, type?): Observable<T> {\n" +
+                    "    return this.http.get<T>(this.origin + url, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
                     "  private valid(queryParams) {\n" +
@@ -150,7 +150,6 @@ public class NgxGenerator {
         }
 
     }
-
 
 
     private void generateControllers(Class<?> aClass, String path) {
@@ -214,6 +213,12 @@ public class NgxGenerator {
                         ngxClientParams += ", " + String.format("{%s}",
                                 queryParams.stream().map(s -> String.format("%s: %s", s, s))
                                         .collect(Collectors.joining(", ")));
+                    }
+                    if ("string".equals(returnType)) {
+                        if (queryParams.isEmpty())
+                            ngxClientParams += ", null, 'text'";
+                        else
+                            ngxClientParams += ", 'text'";
                     }
                     return String.format(
                             "  %s(%s): Observable<%s> {\n" +
