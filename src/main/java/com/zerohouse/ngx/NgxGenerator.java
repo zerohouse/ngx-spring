@@ -242,6 +242,8 @@ public class NgxGenerator {
     public void typescriptModelAdd(Type type) {
         if (excludes.contains(type))
             return;
+        if (this.types.stream().anyMatch(type1 -> type1.getTypeName().equals(type.getTypeName())))
+            return;
         if (type.getClass().equals(Class.class) && Arrays.stream(((Class) type).getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType())))
             return;
         this.types.add(type);
