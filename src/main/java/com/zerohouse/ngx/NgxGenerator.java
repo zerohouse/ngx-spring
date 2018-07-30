@@ -31,6 +31,7 @@ public class NgxGenerator {
     String prefix = "";
 
     Map<String, String> defaultTypes;
+    Set<String> typeNames = new HashSet<>();
 
     LinkedHashSet<Type> types = new LinkedHashSet<>();
 
@@ -199,8 +200,9 @@ public class NgxGenerator {
 
                     String methodName = method.getName();
                     String httpMethod = getMethod(method);
-                    this.typescriptModelAdd(method.getGenericReturnType());
-                    String returnType = makeFromTypeName(method.getGenericReturnType().getTypeName(), returnTypeSimpleNames);
+                    String returnType =
+                            this.typescriptModelAdd(method.getGenericReturnType()) ?
+                            makeFromTypeName(method.getGenericReturnType().getTypeName(), returnTypeSimpleNames) : "any";
                     String ngxClientParams = url;
 
                     if (httpMethod.equals("post") || methodName.equals("put")) {
@@ -239,18 +241,37 @@ public class NgxGenerator {
     }
 
 
-    public void typescriptModelAdd(Type type) {
+    public boolean typescriptModelAdd(Type type) {
         if (excludes.contains(type))
-            return;
-        if (this.types.stream().anyMatch(type1 -> type1.getTypeName().equals(type.getTypeName())))
-            return;
+            return false;
+        if (this.types.stream().anyMatch(type1 -> typeNameEquals(type1.getTypeName(), type.getTypeName())))
+            return true;
         if (type.getClass().equals(Class.class) && Arrays.stream(((Class) type).getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType())))
-            return;
+            return false;
         this.types.add(type);
+        return true;
+    }
+
+    private boolean typeNameEquals(String typeName, String typeName1) {
+        String name = getSimpleName(typeName);
+        String name2 = getSimpleName(typeName1);
+        return name.equals(name2);
+    }
+
+    private String getSimpleName(String typeName1) {
+        Pattern pattern = Pattern.compile("(\\w*)$");
+        Matcher matcher = pattern.matcher(typeName1);
+        matcher.find();
+        return matcher.group(0);
     }
 
     private String makeFromTypeName(String typeName, Set<String> returnTypeSimpleNames, String... args) {
         if (!typeName.contains("<")) {
+            typeNames.add(typeName);
+            try {
+                this.typescriptModelAdd(Class.forName(typeName));
+            } catch (ClassNotFoundException e) {
+            }
             String name = parsedName(typeName, returnTypeSimpleNames);
             if (defaultTypes.containsKey(name)) {
                 if (args.length != 0)
