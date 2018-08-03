@@ -205,7 +205,7 @@ public class NgxGenerator {
                             makeFromTypeName(method.getGenericReturnType().getTypeName(), returnTypeSimpleNames) : "any";
                     String ngxClientParams = url;
 
-                    if (httpMethod.equals("post") || methodName.equals("put")) {
+                    if (httpMethod.equals("post") || httpMethod.equals("put")) {
                         if (body == null)
                             ngxClientParams += ", null";
                         else
