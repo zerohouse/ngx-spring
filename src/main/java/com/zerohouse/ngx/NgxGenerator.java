@@ -144,7 +144,7 @@ public class NgxGenerator {
             types.sort(Comparator.comparing(Type::getTypeName));
             new TypeScriptGenerator(settings).generateTypeScript(
                     Input.from(types.toArray(new Type[]{})),
-                    Output.to(new File(outputPath + "/api.model.d.ts")));
+                    Output.to(new File(outputPath + "/api.model.ts")));
 
         } catch (Exception e) {
             e.printStackTrace();
