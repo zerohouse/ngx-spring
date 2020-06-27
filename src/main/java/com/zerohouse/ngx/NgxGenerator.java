@@ -177,8 +177,8 @@ public class NgxGenerator {
         Set<String> returnTypeSimpleNames = new LinkedHashSet<>();
         tsGenerator.addMethods(
                 methods.stream().filter(method ->
-                        Arrays.stream(method.getDeclaredAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
-                                || excludeUrls.contains(getUrl(method))).map(method -> {
+                        !(Arrays.stream(method.getDeclaredAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
+                                || excludeUrls.contains(getUrl(method)))).map(method -> {
                     String url = getUrl(method);
                     List<Param> params = new ArrayList<>();
                     if (url.contains("{") && url.contains("}")) {
