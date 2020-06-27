@@ -176,7 +176,9 @@ public class NgxGenerator {
         methods.sort(Comparator.comparing(Method::getName));
         Set<String> returnTypeSimpleNames = new LinkedHashSet<>();
         tsGenerator.addMethods(
-                methods.stream().map(method -> {
+                methods.stream().filter(method ->
+                        Arrays.stream(method.getDeclaredAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
+                                || excludeUrls.contains(getUrl(method))).map(method -> {
                     String url = getUrl(method);
                     List<Param> params = new ArrayList<>();
                     if (url.contains("{") && url.contains("}")) {
@@ -192,8 +194,6 @@ public class NgxGenerator {
                         Parameter parameter = parameters[i];
                         if (excludes.contains(parameter.getType())
                                 || Arrays.stream(parameter.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
-                                || Arrays.stream(method.getDeclaredAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
-                                || excludeUrls.contains(url)
                         )
                             continue;
                         if (parameter.isAnnotationPresent(RequestBody.class)) {
