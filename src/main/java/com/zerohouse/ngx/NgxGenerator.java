@@ -38,6 +38,7 @@ public class NgxGenerator {
     public NgxGenerator(String urlPrefix) {
         this.exclude(HttpServletRequest.class);
         this.exclude(HttpServletResponse.class);
+        this.exclude(byte[].class);
         this.exclude(PathVariable.class);
         this.prefix = urlPrefix;
         defaultTypes = new HashMap<>();
@@ -202,7 +203,7 @@ public class NgxGenerator {
                     String httpMethod = getMethod(method);
                     String returnType =
                             this.typescriptModelAdd(method.getGenericReturnType()) ?
-                            makeFromTypeName(method.getGenericReturnType().getTypeName(), returnTypeSimpleNames) : "any";
+                                    makeFromTypeName(method.getGenericReturnType().getTypeName(), returnTypeSimpleNames) : "any";
                     String ngxClientParams = url;
 
                     if (httpMethod.equals("post") || httpMethod.equals("put")) {
