@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class NgxGenerator {
 
     List<Class<?>> excludes = new ArrayList<>();
+    List<String> excludeUrls = new ArrayList<>();
     ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
 
     String prefix = "";
@@ -65,6 +66,10 @@ public class NgxGenerator {
 
     public void exclude(Class<?> aClass) {
         this.excludes.add(aClass);
+    }
+
+    public void exclude(String url) {
+        this.excludeUrls.add(url);
     }
 
     public void generate(String packagePath, String outputPath) {
@@ -187,7 +192,8 @@ public class NgxGenerator {
                         Parameter parameter = parameters[i];
                         if (excludes.contains(parameter.getType())
                                 || Arrays.stream(parameter.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
-                                || Arrays.stream(method.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
+                                || Arrays.stream(method.getDeclaredAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
+                                || excludeUrls.contains(url)
                         )
                             continue;
                         if (parameter.isAnnotationPresent(RequestBody.class)) {
