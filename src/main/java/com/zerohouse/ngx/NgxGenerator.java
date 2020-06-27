@@ -185,7 +185,10 @@ public class NgxGenerator {
                     Set<String> queryParams = new LinkedHashSet<>();
                     for (int i = 0; i < parameters.length; i++) {
                         Parameter parameter = parameters[i];
-                        if (excludes.contains(parameter.getType()) || Arrays.stream(parameter.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType())))
+                        if (excludes.contains(parameter.getType())
+                                || Arrays.stream(parameter.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
+                                || Arrays.stream(method.getAnnotations()).anyMatch(annotation -> excludes.contains(annotation.annotationType()))
+                        )
                             continue;
                         if (parameter.isAnnotationPresent(RequestBody.class)) {
                             body = names[i];
