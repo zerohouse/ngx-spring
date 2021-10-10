@@ -119,23 +119,23 @@ public class NgxGenerator {
                     "      this.origin = '';\n" +
                     "  }\n" +
                     "\n" +
-                    "  put<T>(url, body?, queryParams?, type?): Observable<T> {\n" +
+                    "  put<T>(url: string, body?: any, queryParams?: any, type?: any): Observable<T> {\n" +
                     "    return this.http.put<T>(this.origin + url, body, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
-                    "  delete<T>(url, queryParams?, type?): Observable<T> {\n" +
+                    "  delete<T>(url: string, queryParams?: any, type?: any): Observable<T> {\n" +
                     "    return this.http.delete<T>(this.origin + url, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
-                    "  post<T>(url, body?, queryParams?, type?): Observable<T> {\n" +
+                    "  post<T>(url: string, body?: any, queryParams?: any, type?: any): Observable<T> {\n" +
                     "    return this.http.post<T>(this.origin + url, body, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
-                    "  get<T>(url, queryParams?, type?): Observable<T> {\n" +
+                    "  get<T>(url: string, queryParams?: any, type?: any): Observable<T> {\n" +
                     "    return this.http.get<T>(this.origin + url, {params: this.valid(queryParams), responseType: type});\n" +
                     "  }\n" +
                     "\n" +
-                    "  private valid(queryParams) {\n" +
+                    "  private valid(queryParams: any) {\n" +
                     "    if (queryParams === null || queryParams === undefined)\n" +
                     "      return null;\n" +
                     "    Object.keys(queryParams).forEach(value => {\n" +
