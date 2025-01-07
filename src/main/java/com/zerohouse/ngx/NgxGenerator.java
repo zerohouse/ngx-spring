@@ -59,8 +59,8 @@ public class NgxGenerator {
         defaultTypes.put("ArrayList", "%s[]");
         defaultTypes.put("Set", "%s[]");
         defaultTypes.put("HashSet", "%s[]");
-        defaultTypes.put("Map", "Map<%s>");
-        defaultTypes.put("HashMap", "Map<%s>");
+        defaultTypes.put("Map", "Map<any, any>");
+        defaultTypes.put("HashMap", "Map<any, any>");
         defaultTypes.put("Object", "any");
     }
 
